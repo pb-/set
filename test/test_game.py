@@ -1,6 +1,8 @@
 from itertools import chain
 
-from ..game import compress_board, refill_board, make_game
+from .. import messages, commands
+from ..game import (
+    compress_board, refill_board, make_game, initial_state, update)
 
 
 def test_compress_board():
@@ -30,3 +32,23 @@ def test_refill_board():
         **make_game(0, 0),
         'deck': [],
     })
+
+
+def test_update():
+    s = initial_state()
+    s, c = update(s, 0, messages.player_joined(1, 'alice'))
+    assert s['players'][0]['name'] == 'alice'
+    assert not s['game']
+    assert not c
+
+    s, c = update(s, 0, messages.player_joined(1, 'bob'))
+    assert len(s['players']) == 2
+    assert c[0]['type'] == commands.DELAY
+
+    s, c = update(s, 0, c[0]['message'])
+    assert c[0]['type'] == commands.GENERATE_RANDOM
+
+    s, c = update(s, 0, c[0]['message_func'](0))
+    assert s['game']
+    assert -1 not in chain(*s['game']['board'])
+    assert c[0]['type'] == commands.BROADCAST

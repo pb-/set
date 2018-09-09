@@ -8,3 +8,6 @@ lint:
 test:
 	pipenv run pytest -v
 .PHONY: test
+
+dev_install:
+	pipenv install --dev
