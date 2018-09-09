@@ -37,6 +37,9 @@ def update(state, time, message):
             return state, []
 
         is_correct = is_board_set(state['game']['board'], message['cards'])
+        positions = tuple(
+            find_card(state['game']['board'], c) for c in message['cards'])
+
         s = {
             **state,
             'players': [
@@ -55,9 +58,21 @@ def update(state, time, message):
             } if is_correct else state['game']
         }
 
-        return s, []  # TODO commands
+        # TODO check win condition
+
+        return s, [commands.delay(2, messages.cards_dealt(positions))] \
+            if is_correct else []  # TODO other commands
 
     return state, []
+
+
+def find_card(board, card):
+    return next((
+        (col, row)
+        for col in range(len(board))
+        for row in range(len(board[col]))
+        if board[col][row] == card
+    ), None)
 
 
 def points(is_correct):
@@ -74,6 +89,7 @@ def make_player(id_, name, joined_at):
         'id': id_,
         'name': name,
         'points': 0,
+        'wants_cards': False,
         'joined_at': joined_at,
     }
 
