@@ -2,7 +2,7 @@ from itertools import chain
 
 from .. import messages, commands
 from ..game import (
-    compress_board, refill_board, make_game, initial_state, update)
+    compress_board, refill_board, make_game, initial_state, update, find_set)
 
 
 def test_compress_board():
@@ -34,14 +34,18 @@ def test_refill_board():
     })
 
 
-def test_update():
+def test_find_set():
+    assert find_set(((0, 1, 2), )) == (0, 1, 2)
+
+
+def test_update_basic():
     s = initial_state()
     s, c = update(s, 0, messages.player_joined(1, 'alice'))
     assert s['players'][0]['name'] == 'alice'
     assert not s['game']
     assert not c
 
-    s, c = update(s, 0, messages.player_joined(1, 'bob'))
+    s, c = update(s, 0, messages.player_joined(2, 'bob'))
     assert len(s['players']) == 2
     assert c[0]['type'] == commands.DELAY
 
@@ -51,4 +55,14 @@ def test_update():
     s, c = update(s, 0, c[0]['message_func'](0))
     assert s['game']
     assert -1 not in chain(*s['game']['board'])
+    set1 = (49, 53, 45)
+    assert find_set(s['game']['board']) == set1
     assert c[0]['type'] == commands.BROADCAST
+
+    s, c = update(s, 0, messages.set_announced(2, set1))
+    assert s['players'][1]['points'] == 1
+    assert all(c not in chain(*s['game']['board']) for c in set1)
+
+    no_set = (5, 33, 65)
+    s, c = update(s, 0, messages.set_announced(2, no_set))
+    assert s['players'][1]['points'] == 0

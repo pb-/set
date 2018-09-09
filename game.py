@@ -1,7 +1,8 @@
 from random import Random
-from itertools import chain, zip_longest
+from itertools import chain, zip_longest, combinations
 
 from . import messages, commands
+from .card import is_set
 
 
 def initial_state():
@@ -31,8 +32,36 @@ def update(state, time, message):
             'game': refill_board(make_game(message['seed'], time)),
         }
         return s, [commands.broadcast(filter_state(s))]
+    elif message['type'] == messages.SET_ANNOUNCED:
+        if not state['game']:
+            return state, []
+
+        is_correct = is_board_set(state['game']['board'], message['cards'])
+        s = {
+            **state,
+            'players': [
+                {
+                    **p,
+                    'points': max(0, p['points'] + points(is_correct))
+                } if p['id'] == message['id'] else p
+                for p in state['players']
+            ],
+            'game': {
+                **state['game'],
+                'board': tuple(
+                    tuple(c if c not in message['cards'] else -1 for c in col)
+                    for col in state['game']['board']
+                ),
+            } if is_correct else state['game']
+        }
+
+        return s, []  # TODO commands
 
     return state, []
+
+
+def points(is_correct):
+    return 1 if is_correct else -1
 
 
 def filter_state(state):
@@ -44,8 +73,19 @@ def make_player(id_, name, joined_at):
     return {
         'id': id_,
         'name': name,
+        'points': 0,
         'joined_at': joined_at,
     }
+
+
+def is_board_set(board, cards):
+    return is_set(cards) and all(c in chain(*board) for c in cards)
+
+
+def find_set(board):
+    return next((
+        s for s in combinations((c for c in chain(*board) if c != -1), 3)
+        if is_set(s)), None)
 
 
 def refill_board(game):

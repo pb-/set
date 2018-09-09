@@ -14,4 +14,7 @@ def is_set(cards):
     if len(set(cards)) != 3:
         return False
 
+    if not all(0 <= c <= 80 for c in cards):
+        return False
+
     return 2 not in map(len, map(set, zip(*map(decode, cards))))
