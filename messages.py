@@ -2,7 +2,7 @@ PLAYER_JOINED = 'player-joined'
 GAME_STARTED = 'game-started'
 PLAYERS_READY = 'players-read'
 SET_ANNOUNCED = 'set-announced'
-CARDS_DEALT = 'cards-dealt'
+CARD_DEALT = 'card-dealt'
 
 
 def player_joined(id_, name):
@@ -34,8 +34,8 @@ def set_announced(player_id, cards):
     }
 
 
-def cards_dealt(positions):
+def card_dealt(position):
     return {
-        'type': CARDS_DEALT,
-        'positions': positions,
+        'type': CARD_DEALT,
+        'position': position,
     }

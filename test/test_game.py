@@ -62,7 +62,9 @@ def test_update_basic():
     s, c = update(s, 0, messages.set_announced(2, set1))
     assert s['players'][1]['points'] == 1
     assert all(card not in chain(*s['game']['board']) for card in set1)
-    assert c[0]['message']['positions'] == ((0, 0), (0, 1), (3, 0))
+    assert c[0]['message']['position'] == (0, 0)
+    assert c[1]['message']['position'] == (0, 1)
+    assert c[2]['message']['position'] == (3, 0)
 
     no_set = (5, 33, 65)
     s, c = update(s, 0, messages.set_announced(2, no_set))

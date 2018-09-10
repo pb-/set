@@ -4,6 +4,9 @@ from itertools import chain, zip_longest, combinations
 from . import messages, commands
 from .card import is_set
 
+DEAL_DELAY_S = 2
+DEAL_DELTA_S = DEAL_DELAY_S / 10
+
 
 def initial_state():
     return {
@@ -13,6 +16,7 @@ def initial_state():
 
 
 def update(state, time, message):
+    # TODO messages: player left, card dealt
     if message['type'] == messages.PLAYER_JOINED:
         s = {
             **state,
@@ -25,6 +29,7 @@ def update(state, time, message):
 
         return s, []
     elif message['type'] == messages.PLAYERS_READY:
+        # TODO: make sure we still have more than one player
         return state, [commands.generate_random(messages.game_started)]
     elif message['type'] == messages.GAME_STARTED:
         s = {
@@ -58,10 +63,17 @@ def update(state, time, message):
             } if is_correct else state['game']
         }
 
-        # TODO check win condition
+        num_cards = len(list(chain(*s['game']['board'])))
+        deals = [
+            commands.delay(
+                DEAL_DELAY_S + i * DEAL_DELTA_S, messages.card_dealt(position))
+            for i, position in enumerate(positions)
+        ] if is_correct and num_cards <= 12 and s['game']['deck'] else []
 
-        return s, [commands.delay(2, messages.cards_dealt(positions))] \
-            if is_correct else []  # TODO other commands
+        if not s['game']['deck'] and not find_set(s['game']['board']):
+            pass  # TODO game ends!
+
+        return s, [*deals, commands.broadcast(filter_state(s))]
 
     return state, []
 
@@ -81,6 +93,7 @@ def points(is_correct):
 
 def filter_state(state):
     """Filter game state for clients (remove secrets and useless data)."""
+    # TODO implement. also: add message type
     return state
 
 
