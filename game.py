@@ -33,10 +33,12 @@ def update(state, time, message):
 
         return s, [commands.broadcast(filter_state(s))]
     elif message['type'] == messages.PLAYER_LEFT:
+        players = [p for p in state['players'] if p['id'] != message['id']]
+
         s = {
             **state,
-            'players': [
-                p for p in state['players'] if p['id'] != message['id']]
+            'players': players,
+            'game': state['game'] if players else None,
         }
         return s, [commands.broadcast(filter_state(s))]
     elif message['type'] == messages.PLAYERS_READY:

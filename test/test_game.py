@@ -56,6 +56,7 @@ def test_update_basic():
 
     s, c = update(s, 0, c[0]['message_func'](0))
     assert s['game']
+    _all_leaving(s, c)
     assert -1 not in chain(*s['game']['board'])
     set1 = (49, 53, 45)
     assert find_set(s['game']['board']) == set1
@@ -79,3 +80,9 @@ def _player_leaving(s, c):
 
     s, c = update(s, 0, c[0]['message'])
     assert not c, '# of players dropped below 2 during countdown, no game'
+
+
+def _all_leaving(s, c):
+    s, _ = update(s, 0, messages.player_left(1))
+    s, _ = update(s, 0, messages.player_left(2))
+    assert not s['game']
