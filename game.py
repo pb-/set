@@ -49,6 +49,7 @@ def update(state, time, message):
     elif message['type'] == messages.GAME_STARTED:
         s = {
             **state,
+            'players': [{**p, 'points': 0} for p in state['players']],
             'game': refill_board(make_game(message['seed'], time)),
         }
         return s, [commands.broadcast(filter_state(s))]
