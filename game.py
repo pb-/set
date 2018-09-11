@@ -3,6 +3,7 @@ from itertools import chain, zip_longest, combinations
 
 from . import messages, commands
 from .card import is_set
+from .functools import valuedispatch
 
 START_DELAY_S = 3
 RESTART_DELAY_S = 5
@@ -17,113 +18,128 @@ def initial_state():
     }
 
 
+@valuedispatch(lambda args, _: args[2].get('type'))
 def update(state, time, message):
-    # TODO messages: card dealt
-    if message['type'] == messages.PLAYER_JOINED:
-        s = {
-            **state,
-            'players': [*state['players'], make_player(
-                message['id'], message['name'], time)]
-        }
-
-        if not s['game'] and len(s['players']) > 1:
-            id_ = max_id(s['players'])
-            return s, [
-                commands.delay(START_DELAY_S, messages.players_ready(id_))]
-
-        return s, [commands.broadcast(filter_state(s))]
-    elif message['type'] == messages.PLAYER_LEFT:
-        players = [p for p in state['players'] if p['id'] != message['id']]
-
-        s = {
-            **state,
-            'players': players,
-            'game': state['game'] if players else None,
-        }
-        return s, [commands.broadcast(filter_state(s))]
-    elif message['type'] == messages.PLAYERS_READY:
-        id_ = max_id(state['players'])
-        if len(state['players']) < 2 or id_ > message['max_id']:
-            return state, []
-        return state, [commands.generate_random(messages.game_started)]
-    elif message['type'] == messages.GAME_STARTED:
-        s = {
-            **state,
-            'players': [{**p, 'points': 0} for p in state['players']],
-            'game': refill_board(make_game(message['seed'], time)),
-        }
-        return s, [commands.broadcast(filter_state(s))]
-    elif message['type'] == messages.CARDS_WANTED:
-        if not state['game'] or state['game']['future_cards']:
-            return state, []
-
-        s = {
-            **state,
-            'players': [{
-                **p, 'wants_cards': True
-                } if p['id'] == message['player_id'] else p
-                for p in state['players']],
-        }
-
-        if not all(p['wants_cards'] for p in s['players']):
-            return s, []
-
-        st = {
-            **s,
-            'players': [{**p, 'wants_cards': False} for p in s['players']],
-        }
-
-        # TODO continue
-        return st, []
-    elif message['type'] == messages.SET_ANNOUNCED:
-        if not state['game'] or state['game']['game_over']:
-            return state, []
-
-        is_correct = is_board_set(state['game']['board'], message['cards'])
-        positions = tuple(
-            find_card(state['game']['board'], c) for c in message['cards'])
-
-        s = {
-            **state,
-            'players': [
-                {
-                    **p,
-                    'points': max(0, p['points'] + points(is_correct))
-                } if p['id'] == message['id'] else p
-                for p in state['players']
-            ],
-            'game': {
-                **state['game'],
-                'board': tuple(
-                    tuple(c if c not in message['cards'] else -1 for c in col)
-                    for col in state['game']['board']
-                ),
-            } if is_correct else state['game']
-        }
-
-        num_cards = len(list(chain(*s['game']['board'])))
-        deals = [
-            commands.delay(
-                DEAL_DELAY_S + i * DEAL_DELTA_S, messages.card_dealt(position))
-            for i, position in enumerate(positions)
-        ] if is_correct and num_cards <= 12 and s['game']['deck'] else []
-
-        c = [*deals, commands.broadcast(filter_state(s))]
-
-        if not s['game']['deck'] and not find_set(s['game']['board']):
-            id_ = max_id(['players'])
-            return {
-                **s, 'game': {
-                    **s['game'],
-                    'game_over': True,
-                    'future_cards': s['game']['future_cards'] + 3
-                }}, [
-                *c, commands.delay(
-                    RESTART_DELAY_S, messages.players_ready(id_))]
-
-        return s, c
-
     return state, []
+
+
+@update.register(messages.PLAYER_JOINED)  # NOQA: F811
+def _(state, time, message):
+    s = {
+        **state,
+        'players': [*state['players'], make_player(
+            message['id'], message['name'], time)]
+    }
+
+    if not s['game'] and len(s['players']) > 1:
+        id_ = max_id(s['players'])
+        return s, [commands.delay(START_DELAY_S, messages.players_ready(id_))]
+
+    return s, [commands.broadcast(filter_state(s))]
+
+
+@update.register(messages.PLAYER_LEFT)  # NOQA: F811
+def _(state, time, message):
+    players = [p for p in state['players'] if p['id'] != message['id']]
+
+    s = {
+        **state,
+        'players': players,
+        'game': state['game'] if players else None,
+    }
+    return s, [commands.broadcast(filter_state(s))]
+
+
+@update.register(messages.PLAYERS_READY)  # NOQA: F811
+def _(state, time, message):
+    id_ = max_id(state['players'])
+    if len(state['players']) < 2 or id_ > message['max_id']:
+        return state, []
+    return state, [commands.generate_random(messages.game_started)]
+
+
+@update.register(messages.GAME_STARTED)  # NOQA: F811
+def _(state, time, message):
+    s = {
+        **state,
+        'players': [{**p, 'points': 0} for p in state['players']],
+        'game': refill_board(make_game(message['seed'], time)),
+    }
+    return s, [commands.broadcast(filter_state(s))]
+
+
+@update.register(messages.CARDS_WANTED)  # NOQA: F811
+def _(state, time, message):
+    if not state['game'] or state['game']['future_cards']:
+        return state, []
+
+    s = {
+        **state,
+        'players': [{
+            **p, 'wants_cards': True
+            } if p['id'] == message['player_id'] else p
+            for p in state['players']],
+    }
+
+    if not all(p['wants_cards'] for p in s['players']):
+        return s, []
+
+    st = {
+        **s,
+        'players': [{**p, 'wants_cards': False} for p in s['players']],
+    }
+
+    # TODO continue
+    return st, []
+
+
+@update.register(messages.SET_ANNOUNCED)  # NOQA: F811
+def _(state, time, message):
+    if not state['game'] or state['game']['game_over']:
+        return state, []
+
+    is_correct = is_board_set(state['game']['board'], message['cards'])
+    positions = tuple(
+        find_card(state['game']['board'], c) for c in message['cards'])
+
+    s = {
+        **state,
+        'players': [
+            {
+                **p,
+                'points': max(0, p['points'] + points(is_correct))
+            } if p['id'] == message['id'] else p
+            for p in state['players']
+        ],
+        'game': {
+            **state['game'],
+            'board': tuple(
+                tuple(c if c not in message['cards'] else -1 for c in col)
+                for col in state['game']['board']
+            ),
+        } if is_correct else state['game']
+    }
+
+    num_cards = len(list(chain(*s['game']['board'])))
+    deals = [
+        commands.delay(
+            DEAL_DELAY_S + i * DEAL_DELTA_S, messages.card_dealt(position))
+        for i, position in enumerate(positions)
+    ] if is_correct and num_cards <= 12 and s['game']['deck'] else []
+
+    c = [*deals, commands.broadcast(filter_state(s))]
+
+    if not s['game']['deck'] and not find_set(s['game']['board']):
+        id_ = max_id(['players'])
+        return {
+            **s, 'game': {
+                **s['game'],
+                'game_over': True,
+                'future_cards': s['game']['future_cards'] + 3
+            }}, [
+            *c, commands.delay(RESTART_DELAY_S, messages.players_ready(id_))]
+
+    return s, c
 
 
 def find_card(board, card):
