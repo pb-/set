@@ -4,6 +4,8 @@ from itertools import chain, zip_longest, combinations
 from . import messages, commands
 from .card import is_set
 
+START_DELAY_S = 3
+RESTART_DELAY_S = 5
 DEAL_DELAY_S = 2
 DEAL_DELTA_S = DEAL_DELAY_S / 10
 
@@ -25,11 +27,22 @@ def update(state, time, message):
         }
 
         if not s['game'] and len(s['players']) > 1:
-            return s, [commands.delay(3, messages.players_ready())]
+            id_ = max_id(s['players'])
+            return s, [
+                commands.delay(START_DELAY_S, messages.players_ready(id_))]
 
-        return s, []
+        return s, [commands.broadcast(filter_state(s))]
+    elif message['type'] == messages.PLAYER_LEFT:
+        s = {
+            **state,
+            'players': [
+                p for p in state['players'] if p['id'] != message['id']]
+        }
+        return s, [commands.broadcast(filter_state(s))]
     elif message['type'] == messages.PLAYERS_READY:
-        # TODO: make sure we still have more than one player
+        id_ = max_id(state['players'])
+        if len(state['players']) < 2 or id_ > message['max_id']:
+            return state, []
         return state, [commands.generate_random(messages.game_started)]
     elif message['type'] == messages.GAME_STARTED:
         s = {
@@ -38,7 +51,7 @@ def update(state, time, message):
         }
         return s, [commands.broadcast(filter_state(s))]
     elif message['type'] == messages.SET_ANNOUNCED:
-        if not state['game']:
+        if not state['game'] or state['game']['game_over']:
             return state, []
 
         is_correct = is_board_set(state['game']['board'], message['cards'])
@@ -70,10 +83,15 @@ def update(state, time, message):
             for i, position in enumerate(positions)
         ] if is_correct and num_cards <= 12 and s['game']['deck'] else []
 
-        if not s['game']['deck'] and not find_set(s['game']['board']):
-            pass  # TODO game ends!
+        c = [*deals, commands.broadcast(filter_state(s))]
 
-        return s, [*deals, commands.broadcast(filter_state(s))]
+        if not s['game']['deck'] and not find_set(s['game']['board']):
+            id_ = max_id(['players'])
+            return {**s, 'game': {**s['game'], 'game_over': True}}, [
+                *c, commands.delay(
+                    RESTART_DELAY_S, messages.players_ready(id_))]
+
+        return s, c
 
     return state, []
 
@@ -89,6 +107,10 @@ def find_card(board, card):
 
 def points(is_correct):
     return 1 if is_correct else -1
+
+
+def max_id(players):
+    return max(p['id'] for p in players)
 
 
 def filter_state(state):
@@ -145,6 +167,7 @@ def make_game(seed, time):
     return {
         'deck': make_deck(seed),
         'board': ((-1, ) * 3, ) * 4,
+        'game_over': False,
         'started_at': time,
     }
 

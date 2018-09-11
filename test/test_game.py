@@ -43,11 +43,13 @@ def test_update_basic():
     s, c = update(s, 0, messages.player_joined(1, 'alice'))
     assert s['players'][0]['name'] == 'alice'
     assert not s['game']
-    assert not c
 
     s, c = update(s, 0, messages.player_joined(2, 'bob'))
     assert len(s['players']) == 2
     assert c[0]['type'] == commands.DELAY
+    assert c[0]['message']['max_id'] == 2
+
+    _player_leaving(s, c)
 
     s, c = update(s, 0, c[0]['message'])
     assert c[0]['type'] == commands.GENERATE_RANDOM
@@ -69,3 +71,11 @@ def test_update_basic():
     no_set = (5, 33, 65)
     s, c = update(s, 0, messages.set_announced(2, no_set))
     assert s['players'][1]['points'] == 0
+
+
+def _player_leaving(s, c):
+    s, _ = update(s, 0, messages.player_left(1))
+    assert len(s['players']) == 1
+
+    s, c = update(s, 0, c[0]['message'])
+    assert not c, '# of players dropped below 2 during countdown, no game'

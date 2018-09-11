@@ -1,4 +1,5 @@
 PLAYER_JOINED = 'player-joined'
+PLAYER_LEFT = 'player-left'
 GAME_STARTED = 'game-started'
 PLAYERS_READY = 'players-read'
 SET_ANNOUNCED = 'set-announced'
@@ -13,9 +14,17 @@ def player_joined(id_, name):
     }
 
 
-def players_ready():
+def player_left(id_):
+    return {
+        'type': PLAYER_LEFT,
+        'id': id_,
+    }
+
+
+def players_ready(max_id):
     return {
         'type': PLAYERS_READY,
+        'max_id': max_id,
     }
 
 
