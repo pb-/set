@@ -1,6 +1,7 @@
 PLAYER_JOINED = 'player-joined'
 PLAYER_LEFT = 'player-left'
 GAME_STARTED = 'game-started'
+CARDS_WANTED = 'cards-wanted'
 PLAYERS_READY = 'players-read'
 SET_ANNOUNCED = 'set-announced'
 CARD_DEALT = 'card-dealt'
@@ -32,6 +33,12 @@ def game_started(seed):
     return {
         'type': GAME_STARTED,
         'seed': seed,
+    }
+
+
+def cards_wanted(player_id):
+    return {
+        'type': CARDS_WANTED,
     }
 
 

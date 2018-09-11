@@ -38,6 +38,24 @@ def test_find_set():
     assert find_set(((0, 1, 2), )) == (0, 1, 2)
 
 
+def test_update_unknown():
+    s, c = update(initial_state(), 0, {'type': 'unknown-489850'})
+    assert s == initial_state()
+    assert not c
+
+
+def test_no_game():
+    game_messages = (
+        messages.set_announced(1, [0, 1, 2]),
+        messages.cards_wanted(1),
+    )
+
+    for m in game_messages:
+        s, c = update(initial_state(), 0, m)
+        assert s == initial_state()
+        assert not c
+
+
 def test_update_basic():
     s = initial_state()
     s, c = update(s, 0, messages.player_joined(1, 'alice'))

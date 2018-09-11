@@ -18,7 +18,7 @@ def initial_state():
 
 
 def update(state, time, message):
-    # TODO messages: player left, card dealt
+    # TODO messages: card dealt
     if message['type'] == messages.PLAYER_JOINED:
         s = {
             **state,
@@ -53,6 +53,28 @@ def update(state, time, message):
             'game': refill_board(make_game(message['seed'], time)),
         }
         return s, [commands.broadcast(filter_state(s))]
+    elif message['type'] == messages.CARDS_WANTED:
+        if not state['game'] or state['game']['future_cards']:
+            return state, []
+
+        s = {
+            **state,
+            'players': [{
+                **p, 'wants_cards': True
+                } if p['id'] == message['player_id'] else p
+                for p in state['players']],
+        }
+
+        if not all(p['wants_cards'] for p in s['players']):
+            return s, []
+
+        st = {
+            **s,
+            'players': [{**p, 'wants_cards': False} for p in s['players']],
+        }
+
+        # TODO continue
+        return st, []
     elif message['type'] == messages.SET_ANNOUNCED:
         if not state['game'] or state['game']['game_over']:
             return state, []
@@ -90,7 +112,12 @@ def update(state, time, message):
 
         if not s['game']['deck'] and not find_set(s['game']['board']):
             id_ = max_id(['players'])
-            return {**s, 'game': {**s['game'], 'game_over': True}}, [
+            return {
+                **s, 'game': {
+                    **s['game'],
+                    'game_over': True,
+                    'future_cards': s['game']['future_cards'] + 3
+                }}, [
                 *c, commands.delay(
                     RESTART_DELAY_S, messages.players_ready(id_))]
 
@@ -170,6 +197,7 @@ def make_game(seed, time):
     return {
         'deck': make_deck(seed),
         'board': ((-1, ) * 3, ) * 4,
+        'future_cards': 0,
         'game_over': False,
         'started_at': time,
     }
