@@ -1,6 +1,6 @@
 from itertools import chain
 
-from .. import messages, commands, board
+from .. import messages, commands, board, net
 from ..game import initial_state, update, find_set
 
 
@@ -56,10 +56,41 @@ def test_update_basic():
     assert c[0]['message']['position'] == (0, 0)
     assert c[1]['message']['position'] == (0, 1)
     assert c[2]['message']['position'] == (3, 0)
+    assert s['game']['future_cards'] == 3
+
+    assert not board.is_full(s['game']['board'])
+    s = _apply_delayed(s, c)
+    assert board.is_full(s['game']['board'])
 
     no_set = (5, 33, 65)
     s, c = update(s, 0, messages.set_announced(2, no_set))
     assert s['players'][1]['points'] == 0
+
+    before = s
+    s, c = update(s, 0, messages.cards_wanted(1))
+    s, c = update(s, 0, messages.cards_wanted(2))
+    assert s == before
+    assert c[0]['data']['type'] == net.CARDS_DENIED
+
+    # keep playing until there are no more sets
+    while find_set(s['game']['board']):
+        set2 = find_set(s['game']['board'])
+        s, c = update(s, 0, messages.set_announced(1, set2))
+
+        s = _apply_delayed(s, c)
+
+    s, c = update(s, 0, messages.cards_wanted(1))
+    s, c = update(s, 0, messages.cards_wanted(2))
+    assert board.size(s['game']['board']) == 15
+    s = _apply_delayed(s, c)
+    assert board.is_full(s['game']['board'])
+
+
+def _apply_delayed(s, cmds):
+    for c in cmds:
+        if c['type'] == commands.DELAY:
+            s, _ = update(s, 0, c['message'])
+    return s
 
 
 def _player_leaving(s, c):

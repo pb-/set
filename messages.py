@@ -1,3 +1,8 @@
+"""
+Messages passed into the update() function, some of these are acceptable
+client -> server messages.
+"""
+
 PLAYER_JOINED = 'player-joined'
 PLAYER_LEFT = 'player-left'
 GAME_STARTED = 'game-started'
@@ -5,6 +10,8 @@ CARDS_WANTED = 'cards-wanted'
 PLAYERS_READY = 'players-read'
 SET_ANNOUNCED = 'set-announced'
 CARD_DEALT = 'card-dealt'
+
+CLIENT_MESSAGES = (SET_ANNOUNCED, CARDS_WANTED)
 
 
 def player_joined(id_, name):
@@ -39,6 +46,7 @@ def game_started(seed):
 def cards_wanted(player_id):
     return {
         'type': CARDS_WANTED,
+        'id': player_id,
     }
 
 

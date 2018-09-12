@@ -1,3 +1,7 @@
+"""
+Commands are returned from update() and describle side effects for the runtime.
+"""
+
 DELAY = 'delay'
 GENERATE_RANDOM = 'generate_random'
 BROADCAST = 'broadcast'

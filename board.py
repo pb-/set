@@ -27,8 +27,30 @@ def size(board):
     return sum(1 for _ in chain(*board))
 
 
-def empty_slots(board):
-    return sum(1 for c in chain(*board) if c == -1)
+def is_full(board):
+    return -1 not in chain(*board)
+
+
+def expand(board):
+    return (*board, (-1, ) * 3)
+
+
+def free_positions(board):
+    return tuple(
+        (col, row)
+        for col in range(len(board))
+        for row in range(len(board[col]))
+        if board[col][row] == -1
+    )
+
+
+def put(board, position, card):
+    return tuple(
+        tuple(
+            card if (col, row) == position else board[col][row]
+            for row in range(len(board[col])))
+        for col in range(len(board))
+    )
 
 
 def grouper(iterable, n, fillvalue=None):

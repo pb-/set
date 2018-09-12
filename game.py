@@ -1,7 +1,11 @@
+"""
+Contains the meat of the app: all game logic is in update().
+"""
+
 from random import Random
 from itertools import combinations
 
-from . import messages, commands, board
+from . import messages, commands, board, net
 from .card import is_set
 from .functools import valuedispatch
 
@@ -35,7 +39,7 @@ def _(state, time, message):
         id_ = max_id(s['players'])
         return s, [commands.delay(START_DELAY_S, messages.players_ready(id_))]
 
-    return s, [commands.broadcast(filter_state(s))]
+    return s, [commands.broadcast(net.state(s))]
 
 
 @update.register(messages.PLAYER_LEFT)  # NOQA: F811
@@ -47,7 +51,7 @@ def _(state, time, message):
         'players': players,
         'game': state['game'] if players else None,
     }
-    return s, [commands.broadcast(filter_state(s))]
+    return s, [commands.broadcast(net.state(s))]
 
 
 @update.register(messages.PLAYERS_READY)  # NOQA: F811
@@ -65,32 +69,61 @@ def _(state, time, message):
         'players': [{**p, 'points': 0} for p in state['players']],
         'game': make_game(message['seed'], time),
     }
-    return s, [commands.broadcast(filter_state(s))]
+    return s, [commands.broadcast(net.state(s))]
+
+
+@update.register(messages.CARD_DEALT)  # NOQA: F811
+def _(state, time, message):
+    return {
+        **state,
+        'game': {
+            **state['game'],
+            'deck': state['game']['deck'][1:],
+            'board': board.put(
+                state['game']['board'],
+                message['position'],
+                state['game']['deck'][0]),
+            'future_cards': state['game']['future_cards'] - 1,
+        }
+    }, [commands.broadcast(net.state(state))]
 
 
 @update.register(messages.CARDS_WANTED)  # NOQA: F811
 def _(state, time, message):
-    if not state['game'] or state['game']['future_cards']:
+    if not state['game'] or state['game']['future_cards'] or \
+            not state['game']['deck']:
         return state, []
 
-    s = {
+    players = [
+        {**p, 'wants_cards': True} if p['id'] == message['id'] else p
+        for p in state['players']]
+
+    if not all(p['wants_cards'] for p in players):
+        return {**state, 'players': players}, []
+
+    players_reset = [{**p, 'wants_cards': False} for p in players]
+
+    if find_set(state['game']['board']):
+        return {**state, 'players': players_reset}, \
+            [commands.broadcast(net.cards_denied())]
+
+    b = state['game']['board']
+    new_board = board.expand(b) if board.is_full(b) else b
+    free = board.free_positions(new_board)[:3]
+    deals = [
+        commands.delay(i * DEAL_DELTA_S, messages.card_dealt(position))
+        for i, position in enumerate(free)
+    ]
+
+    return {
         **state,
-        'players': [{
-            **p, 'wants_cards': True
-            } if p['id'] == message['player_id'] else p
-            for p in state['players']],
-    }
-
-    if not all(p['wants_cards'] for p in s['players']):
-        return s, []
-
-    st = {
-        **s,
-        'players': [{**p, 'wants_cards': False} for p in s['players']],
-    }
-
-    # TODO continue
-    return st, []
+        'players': players_reset,
+        'game': {
+            **state['game'],
+            'board': new_board,
+            'future_cards': state['game']['future_cards'] + 3,
+        },
+    }, deals
 
 
 @update.register(messages.SET_ANNOUNCED)  # NOQA: F811
@@ -114,6 +147,7 @@ def _(state, time, message):
         'game': {
             **state['game'],
             'board': board.without(state['game']['board'], message['cards']),
+            'future_cards': state['game']['future_cards'] + 3,
         } if is_correct else state['game']
     }
 
@@ -124,7 +158,7 @@ def _(state, time, message):
         for i, position in enumerate(positions)
     ] if is_correct and num_cards <= 12 and s['game']['deck'] else []
 
-    c = [*deals, commands.broadcast(filter_state(s))]
+    c = [*deals, commands.broadcast(net.state(s))]
 
     if not s['game']['deck'] and not find_set(s['game']['board']):
         id_ = max_id(['players'])
@@ -132,7 +166,6 @@ def _(state, time, message):
             **s, 'game': {
                 **s['game'],
                 'game_over': True,
-                'future_cards': s['game']['future_cards'] + 3
             }}, [
             *c, commands.delay(RESTART_DELAY_S, messages.players_ready(id_))]
 
@@ -145,12 +178,6 @@ def points(is_correct):
 
 def max_id(players):
     return max(p['id'] for p in players)
-
-
-def filter_state(state):
-    """Filter game state for clients (remove secrets and useless data)."""
-    # TODO implement. also: add message type
-    return state
 
 
 def make_player(id_, name, joined_at):
