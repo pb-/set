@@ -147,7 +147,8 @@ def _(state, time, message):
         'game': {
             **state['game'],
             'board': board.without(state['game']['board'], message['cards']),
-            'future_cards': state['game']['future_cards'] + 3,
+            'future_cards': state['game']['future_cards'] +
+            3 if state['game']['deck'] else 0,
         } if is_correct else state['game']
     }
 
@@ -161,7 +162,7 @@ def _(state, time, message):
     c = [*deals, commands.broadcast(net.state(s))]
 
     if not s['game']['deck'] and not find_set(s['game']['board']):
-        id_ = max_id(['players'])
+        id_ = max_id(s['players'])
         return {
             **s, 'game': {
                 **s['game'],
@@ -200,7 +201,7 @@ def is_board_set(board_, cards):
 
 
 def make_deck(seed):
-    return Random(seed).sample(list(range(80)), 80)
+    return Random(seed).sample(list(range(81)), 81)
 
 
 def make_game(seed, time):

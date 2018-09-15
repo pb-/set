@@ -72,6 +72,8 @@ def test_update_basic():
     assert s == before
     assert c[0]['data']['type'] == net.CARDS_DENIED
 
+    _finish_game(s)
+
     # keep playing until there are no more sets
     while find_set(s['game']['board']):
         set2 = find_set(s['game']['board'])
@@ -84,6 +86,22 @@ def test_update_basic():
     assert board.size(s['game']['board']) == 15
     s = _apply_delayed(s, c)
     assert board.is_full(s['game']['board'])
+
+
+def _finish_game(s):
+    while find_set(s['game']['board']) or s['game']['deck']:
+        assert not s['game']['game_over']
+
+        set3 = find_set(s['game']['board'])
+        if set3:
+            s, c = update(s, 0, messages.set_announced(1, set3))
+        else:
+            s, c = update(s, 0, messages.cards_wanted(1))
+            s, c = update(s, 0, messages.cards_wanted(2))
+
+        s = _apply_delayed(s, c)
+
+    assert s['game']['game_over']
 
 
 def _apply_delayed(s, cmds):
