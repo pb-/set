@@ -32,6 +32,9 @@ def test_update_basic():
     assert s['players'][0]['name'] == 'alice'
     assert not s['game']
 
+    s, c = update(s, 0, messages.player_joined(1, 'alice'))
+    assert len(s['players']) == 1
+
     s, c = update(s, 0, messages.player_joined(2, 'bob'))
     assert len(s['players']) == 2
     assert c[0]['type'] == commands.DELAY

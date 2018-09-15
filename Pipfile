@@ -7,8 +7,11 @@ name = "pypi"
 pytest = "*"
 "flake8" = "*"
 pytest-cov = "*"
+websocket-client = "*"
+set = {path = ".", editable = true}
 
 [packages]
+set = {path = ".", editable = true}
 
 [requires]
 python_version = "3.6"

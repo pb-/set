@@ -11,7 +11,7 @@ PLAYERS_READY = 'players-read'
 SET_ANNOUNCED = 'set-announced'
 CARD_DEALT = 'card-dealt'
 
-CLIENT_MESSAGES = (SET_ANNOUNCED, CARDS_WANTED)
+CLIENT_MESSAGES = (PLAYER_JOINED, SET_ANNOUNCED, CARDS_WANTED)
 
 
 def player_joined(id_, name):

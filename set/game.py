@@ -29,6 +29,10 @@ def update(state, time, message):
 
 @update.register(messages.PLAYER_JOINED)  # NOQA: F811
 def _(state, time, message):
+    if next((p for p in state['players'] if p['id'] == message['id']),
+            None):
+        return state, []
+
     s = {
         **state,
         'players': [*state['players'], make_player(
@@ -147,8 +151,8 @@ def _(state, time, message):
         'game': {
             **state['game'],
             'board': board.without(state['game']['board'], message['cards']),
-            'future_cards': state['game']['future_cards'] +
-            3 if state['game']['deck'] else 0,
+            'future_cards': state['game']['future_cards'] + (
+                3 if state['game']['deck'] else 0)
         } if is_correct else state['game']
     }
 
