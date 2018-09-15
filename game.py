@@ -7,7 +7,7 @@ from itertools import combinations
 
 from . import messages, commands, board, net
 from .card import is_set
-from .functools import valuedispatch
+from .func import valuedispatch
 
 START_DELAY_S = 3
 RESTART_DELAY_S = 5
