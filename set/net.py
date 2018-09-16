@@ -7,10 +7,16 @@ CARDS_DENIED = 'cards-denied'
 
 
 def state(state):
-    # TODO filter secrets and unneeded data
     return {
-        **state,
         'type': STATE,
+        'players': [
+            {'name': p['name'], 'points': p['points']}
+            for p in state['players']
+        ],
+        'game': {
+            'board': state['game']['board'],
+            'game_over': state['game']['game_over'],
+        } if state['game'] else None,
     }
 
 

@@ -41,7 +41,9 @@ def _(state, time, message):
 
     if not s['game'] and len(s['players']) > 1:
         id_ = max_id(s['players'])
-        return s, [commands.delay(START_DELAY_S, messages.players_ready(id_))]
+        return s, [
+            commands.broadcast(net.state(s)),
+            commands.delay(START_DELAY_S, messages.players_ready(id_))]
 
     return s, [commands.broadcast(net.state(s))]
 
