@@ -2,6 +2,7 @@
 Messages passed into the update() function, some of these are acceptable
 client -> server messages.
 """
+from jsonschema import validate, ValidationError
 
 PLAYER_JOINED = 'player-joined'
 PLAYER_LEFT = 'player-left'
@@ -11,7 +12,44 @@ PLAYERS_READY = 'players-read'
 SET_ANNOUNCED = 'set-announced'
 CARD_DEALT = 'card-dealt'
 
-CLIENT_MESSAGES = (PLAYER_JOINED, SET_ANNOUNCED, CARDS_WANTED)
+CLIENT_MESSAGES = [PLAYER_JOINED, SET_ANNOUNCED, CARDS_WANTED]
+
+BASE_SCHEMA = {
+    'type': 'object',
+    'properties': {
+        'type': {
+            'type': 'string',
+            'enum': CLIENT_MESSAGES,
+        },
+    },
+    'required': ['type'],
+}
+
+SCHEMA = {
+    PLAYER_JOINED: {
+        'type': 'object',
+        'properties': {
+            'name': {
+                'type': 'string',
+                'minLength': 1,
+            },
+        },
+        'required': ['name'],
+    },
+    SET_ANNOUNCED: {
+        'type': 'object',
+        'properties': {
+            'cards': {
+                'type': 'array',
+                'items': {
+                    'type': 'number',
+                }
+            },
+        },
+        'required': ['cards'],
+    },
+    CARDS_WANTED: {},
+}
 
 
 def player_joined(id_, name):
@@ -63,3 +101,12 @@ def card_dealt(position):
         'type': CARD_DEALT,
         'position': position,
     }
+
+
+def is_valid(message):
+    try:
+        validate(message, BASE_SCHEMA)
+        validate(message, SCHEMA[message['type']])
+        return True
+    except ValidationError:
+        return False

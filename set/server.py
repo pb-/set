@@ -1,6 +1,7 @@
+import logging
 import time
 import random
-from json import loads, dumps
+from json import loads, dumps, JSONDecodeError
 
 from tornado.ioloop import IOLoop
 from tornado.web import Application
@@ -39,10 +40,14 @@ class Handler(WebSocketHandler):
         self.context['clients'][self.player_id] = self
 
     def on_message(self, message):
-        decoded = loads(message)
+        try:
+            decoded = loads(message)
+        except JSONDecodeError:
+            logging.debug('bad message encoding: `%s`', message)
+            return
 
-        # TODO verify all the fields
-        if decoded.get('type', None) not in messages.CLIENT_MESSAGES:
+        if not messages.is_valid(decoded):
+            logging.debug('bad message: `%s`', message)
             return
 
         self.handle_player_message(decoded)
@@ -53,6 +58,7 @@ class Handler(WebSocketHandler):
 
 
 def run():
+    logging.basicConfig(level=logging.DEBUG)
     context = {
         'state': game.initial_state(),
         'clients': {},
