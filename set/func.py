@@ -1,3 +1,6 @@
+"""
+Utility functions for functional concepts.
+"""
 from functools import partial, wraps
 from collections import defaultdict
 

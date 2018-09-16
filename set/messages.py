@@ -1,6 +1,7 @@
 """
-Messages passed into the update() function, some of these are acceptable
-client -> server messages.
+Pure functions to create messages. Messages passed into the update() function,
+some of these are also acceptable as client -> server messages (schema
+validation available for those.)
 """
 from jsonschema import validate, ValidationError
 

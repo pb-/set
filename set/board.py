@@ -1,3 +1,6 @@
+"""
+Pure functions to manipulate the board of communal cards.
+"""
 from itertools import chain, zip_longest
 
 

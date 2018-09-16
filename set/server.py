@@ -1,3 +1,6 @@
+"""
+Entry point of the app. Contains impure functions and lots of side effects.
+"""
 import logging
 import time
 import random

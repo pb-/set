@@ -1,6 +1,10 @@
 all: lint test
 .PHONY: all
 
+develop:
+	pipenv run setd
+.PHONY: develop
+
 lint:
 	pipenv run flake8 set
 .PHONY: lint

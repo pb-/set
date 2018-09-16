@@ -1,3 +1,6 @@
+"""
+Pure functions to manage cards and collections of cards.
+"""
 from functools import reduce
 from operator import add
 

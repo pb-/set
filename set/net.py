@@ -1,5 +1,5 @@
 """
-Server -> client messages.
+Pure functions to create Server -> client messages.
 """
 
 STATE = 'state'
@@ -7,6 +7,9 @@ CARDS_DENIED = 'cards-denied'
 
 
 def state(state):
+    """
+    state returns a trimmed down version of the game state.
+    """
     return {
         'type': STATE,
         'players': [

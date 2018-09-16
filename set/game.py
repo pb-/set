@@ -1,7 +1,7 @@
 """
-Contains the meat of the app: all game logic is in update().
+Pure functions to manipulate the game's state. Contains the meat of the app,
+all game logic is contained in update().
 """
-
 from random import Random
 from itertools import combinations
 
