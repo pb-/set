@@ -43,7 +43,9 @@ SCHEMA = {
                 'type': 'array',
                 'items': {
                     'type': 'number',
-                }
+                },
+                'minItems': 3,
+                'maxItems': 3,
             },
         },
         'required': ['cards'],
