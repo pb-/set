@@ -5,12 +5,28 @@ import logging
 import time
 import random
 from json import loads, dumps, JSONDecodeError
+from functools import wraps
 
 from tornado.ioloop import IOLoop
 from tornado.web import Application
 from tornado.websocket import WebSocketHandler
 
 from . import game, messages, commands
+
+
+def with_log(update):
+    @wraps(update)
+    def wrapped_update(state_before, time, message):
+        state_after, cmds = update(state_before, time, message)
+        logging.debug(
+            'update before=%s time=%f message=%s -> after=%s commands=%s',
+            state_before, time, message, state_after, cmds)
+        return state_after, cmds
+
+    return wrapped_update
+
+
+game.update = with_log(game.update)
 
 
 class Handler(WebSocketHandler):
