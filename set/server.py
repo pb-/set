@@ -34,9 +34,9 @@ class Handler(WebSocketHandler):
 
     def initialize(self, context):
         self.context = context
-        self.player_id = 1 + (
-            max(context['clients'].keys()) if context['clients'] else 0)
+        self.player_id = 1 + self.context['last_id']
 
+        self.context['last_id'] = self.player_id
         self.context['clients'][self.player_id] = self
 
     def on_message(self, message):
@@ -60,6 +60,7 @@ class Handler(WebSocketHandler):
 def run():
     logging.basicConfig(level=logging.DEBUG)
     context = {
+        'last_id': 0,
         'state': game.initial_state(),
         'clients': {},
     }
