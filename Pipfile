@@ -12,6 +12,8 @@ set = {path = ".", editable = true}
 
 [packages]
 set = {path = ".", editable = true}
+tornado = "*"
+jsonschema = "*"
 
 [requires]
 python_version = "3.6"
