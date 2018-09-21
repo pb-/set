@@ -75,6 +75,9 @@ class Handler(WebSocketHandler):
         del self.context['clients'][self.player_id]
         self.handle_player_message(messages.player_left(self.player_id))
 
+    def check_origin(self, _):
+        return True
+
 
 def run():
     logging.basicConfig(level=logging.DEBUG)
@@ -86,6 +89,6 @@ def run():
 
     Application([
         (r'/', Handler, dict(context=context)),
-    ]).listen(8000)
+    ]).listen(8001)
 
     IOLoop.current().start()
