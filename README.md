@@ -1,12 +1,12 @@
-set
-===
+# set
 
 Implements a fun game.
 
-Development
------------
+## Development
 
-One-time environment setup (`pipenv` is required).
+### Backend
+
+The backend lives in `backend/`. One-time environment setup (`pipenv` is required):
 
 ```
 make dev_install
