@@ -5,6 +5,8 @@ import Svg exposing (path, svg)
 import Svg.Attributes exposing (viewBox, d)
 import WebSocket exposing (listen, send)
 import Json.Decode exposing (Decoder, field, map2, int, string, list, bool, maybe, decodeString)
+import Json.Encode as JE
+import Set
 
 serverAddress = "ws://10.0.0.8:8001"
 
@@ -32,6 +34,7 @@ type alias Model =
   { server : ServerState
   , name : String
   , joined : Bool
+  , selected : Set.Set Int
   }
 
 type alias ServerState =
@@ -87,7 +90,7 @@ boardDecoder =
 
 init : (Model, Cmd Msg)
 init =
-  (Model (ServerState [] Nothing) "" False, Cmd.none)
+  (Model (ServerState [] Nothing) "" False Set.empty, Cmd.none)
 
 
 
@@ -98,6 +101,8 @@ type Msg
   = UpdateName String
   | Join
   | ServerMessage String
+  | ToggleCard Int
+  | RequestCards
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -114,7 +119,29 @@ update msg model =
         Err _ ->
           (model, Cmd.none)
         Ok server ->
-          ({model | server = server}, Cmd.none)
+          let
+            boardCards =
+              case server.game of
+                Just game ->
+                  Set.fromList (List.concat game.board)
+                Nothing ->
+                  Set.empty
+
+          in
+          ({ model
+           | server = server
+           , selected = Set.intersect model.selected boardCards}, Cmd.none)
+
+    ToggleCard num ->
+      let
+        selected = (if Set.member num model.selected then Set.remove else Set.insert) num model.selected
+
+        cmd = if Set.size selected == 3 then send serverAddress (JE.encode 0 (JE.object [("type", JE.string "set-announced"), ("cards", JE.list (List.map JE.int (Set.toList selected)))])) else Cmd.none
+      in
+      ({model | selected = if Set.size selected == 3 then Set.empty else selected}, cmd)
+
+    RequestCards ->
+      (model, send serverAddress (JE.encode 0 (JE.object [("type", JE.string "cards-wanted")])))
 
 
 subscriptions model =
@@ -136,9 +163,7 @@ view : Model -> Html Msg
 view model =
   if model.joined then
     div []
-      [ text (toString model)
-      , viewState model
-      ]
+      [viewState model]
   else
     viewLogin model
 
@@ -153,6 +178,7 @@ viewState : Model -> Html Msg
 viewState model =
   div []
     [ viewGame model
+    , viewControls model
     , viewPlayers model
     ]
 
@@ -166,15 +192,26 @@ viewGame model =
         [ style [("grid-template-columns", "repeat(" ++ (toString (List.length game.board)) ++ ", 1fr)")]
         , class "board"
         ]
-        (List.map viewCard (List.concat game.board))
+        (List.map (viewCard model) (List.concat game.board))
 
-viewCard : Int -> Html Msg
-viewCard card =
-  let
-    c = decodeCard card
-  in
-  div [class ("card col" ++ (toString c.color) ++ " sh" ++ (toString c.shading))]
-    (List.repeat (c.count + 1) (svg [viewBox "-10 5 120 50"] [path [d (shapes c.shape)] []]))
+viewCard : Model -> Int -> Html Msg
+viewCard model card =
+  case card of
+    -1 -> div [class ("card empty")] []
+    _ ->
+      let
+        c = decodeCard card
+        selected = if Set.member card model.selected then " selected" else ""
+      in
+      div
+        [ class ("card col" ++ (toString c.color) ++ " sh" ++ (toString c.shading) ++ selected)
+        , onClick (ToggleCard card)
+        ]
+        (List.repeat (c.count + 1) (svg [viewBox "-10 5 120 50"] [path [d (shapes c.shape)] []]))
+
+viewControls : Model -> Html Msg
+viewControls model =
+  button [onClick RequestCards] [text "No set"]
 
 viewPlayers : Model -> Html Msg
 viewPlayers model =
@@ -185,4 +222,4 @@ viewPlayers model =
         , td [] [ text (toString player.points) ]
         ]
   in
-    table [] (List.map viewPlayer model.server.players)
+  table [] (List.map viewPlayer model.server.players)
