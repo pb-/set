@@ -80,7 +80,7 @@ def _(state, time, message):
 
 @update.register(messages.CARD_DEALT)  # NOQA: F811
 def _(state, time, message):
-    return {
+    s = {
         **state,
         'game': {
             **state['game'],
@@ -91,7 +91,8 @@ def _(state, time, message):
                 state['game']['deck'][0]),
             'future_cards': state['game']['future_cards'] - 1,
         }
-    }, [commands.broadcast(net.state(state))]
+    }
+    return s, [commands.broadcast(net.state(s))]
 
 
 @update.register(messages.CARDS_WANTED)  # NOQA: F811
