@@ -4,6 +4,52 @@
     <meta charset="UTF-8">
     <title>set</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      .board {
+        display: grid;
+        grid-template-rows: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
+        grid-gap: 3vw 3vw;
+      }
+
+      .card {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        border: 1px solid black;
+        border-radius: 2vw;
+        box-shadow: 3px 3px 3px lightgray;
+        padding: 2vw;
+        height: 27vw;
+      }
+
+      .card svg {
+        stroke-width: 3px;
+      }
+
+      .col0 svg {
+        stroke: #d4b76a;
+        fill: #d4b76a;
+      }
+
+      .col1 svg {
+        stroke: #774a8e;
+        fill: #774a8e;
+      }
+
+      .col2 svg {
+        stroke: #468c77;
+        fill: #468c77;
+      }
+
+      .sh0 svg {
+        fill: none;
+      }
+
+      .sh1 svg {
+        fill-opacity: 0.3;
+      }
+    </style>
   </head>
   <body>
     <script src="app.js"></script>
