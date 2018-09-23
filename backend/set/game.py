@@ -118,7 +118,8 @@ def _(state, time, message):
     new_board = board.expand(b) if board.is_full(b) else b
     free = board.free_positions(new_board)[:3]
     deals = [
-        commands.delay(i * DEAL_DELTA_S, messages.card_dealt(position))
+        commands.delay(
+            DEAL_DELAY_S + i * DEAL_DELTA_S, messages.card_dealt(position))
         for i, position in enumerate(free)
     ]
 
