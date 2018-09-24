@@ -190,11 +190,15 @@ viewGame model =
     Nothing ->
       div [] [text "Waiting for another player"]
     Just game ->
-      div
-        [ style [("grid-template-columns", "repeat(" ++ (toString (List.length game.board)) ++ ", 1fr)")]
-        , class "board"
-        ]
-        (List.map (viewCard model) (List.concat game.board))
+      case game.gameOver of
+        True ->
+          div [] [text "Game is over!"]
+        False ->
+          div
+            [ style [("grid-template-columns", "repeat(" ++ (toString (List.length game.board)) ++ ", 1fr)")]
+            , class "board"
+            ]
+            (List.map (viewCard model) (List.concat game.board))
 
 viewCard : Model -> Int -> Html Msg
 viewCard model card =
