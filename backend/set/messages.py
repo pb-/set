@@ -9,7 +9,7 @@ PLAYER_JOINED = 'player-joined'
 PLAYER_LEFT = 'player-left'
 GAME_STARTED = 'game-started'
 CARDS_WANTED = 'cards-wanted'
-PLAYERS_READY = 'players-read'
+PLAYERS_READY = 'players-ready'
 SET_ANNOUNCED = 'set-announced'
 CARD_DEALT = 'card-dealt'
 
