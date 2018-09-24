@@ -4,7 +4,7 @@ import Html.Attributes exposing (placeholder, style, class)
 import Svg exposing (path, svg)
 import Svg.Attributes exposing (viewBox, d)
 import WebSocket exposing (listen, send)
-import Json.Decode exposing (Decoder, field, map2, int, string, list, bool, maybe, decodeString)
+import Json.Decode exposing (Decoder, field, map2, map3, int, string, list, bool, maybe, decodeString)
 import Json.Encode as JE
 import Set
 
@@ -45,6 +45,7 @@ type alias ServerState =
 type alias Player =
   { name : String
   , points : Int
+  , wants_cards : Bool
   }
 
 type alias Game =
@@ -72,9 +73,10 @@ serverStateDecoder =
 
 playerDecoder : Decoder Player
 playerDecoder =
-  map2 Player
+  map3 Player
     (field "name" string)
     (field "points" int)
+    (field "wants_cards" bool)
 
 gameDecoder : Decoder Game
 gameDecoder =
@@ -219,6 +221,7 @@ viewPlayers model =
     viewPlayer player =
       tr []
         [ td [] [ text player.name ]
+        , td [] [ text (if player.wants_cards then "wants cards" else "") ]
         , td [] [ text (toString player.points) ]
         ]
   in

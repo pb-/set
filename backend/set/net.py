@@ -12,9 +12,11 @@ def state(state):
     """
     return {
         'type': STATE,
-        'players': [
-            {'name': p['name'], 'points': p['points']}
-            for p in state['players']
+        'players': [{
+            'name': p['name'],
+            'points': p['points'],
+            'wants_cards': p['wants_cards'],
+            } for p in state['players']
         ],
         'game': {
             'board': state['game']['board'],

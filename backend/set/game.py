@@ -106,13 +106,16 @@ def _(state, time, message):
         for p in state['players']]
 
     if not all(p['wants_cards'] for p in players):
-        return {**state, 'players': players}, []
+        s = {**state, 'players': players}
+        return s, [commands.broadcast(s)]
 
     players_reset = [{**p, 'wants_cards': False} for p in players]
 
     if find_set(state['game']['board']):
-        return {**state, 'players': players_reset}, \
-            [commands.broadcast(net.cards_denied())]
+        s = {**state, 'players': players_reset}
+        return s, [
+            commands.broadcast(net.cards_denied()),
+            commands.broadcast(net.state(s))]
 
     b = state['game']['board']
     new_board = board.expand(b) if board.is_full(b) else b
@@ -123,7 +126,7 @@ def _(state, time, message):
         for i, position in enumerate(free)
     ]
 
-    return {
+    s = {
         **state,
         'players': players_reset,
         'game': {
@@ -131,7 +134,9 @@ def _(state, time, message):
             'board': new_board,
             'future_cards': state['game']['future_cards'] + 3,
         },
-    }, deals
+    }
+
+    return s, deals + [commands.broadcast(s)]
 
 
 @update.register(messages.SET_ANNOUNCED)  # NOQA: F811
