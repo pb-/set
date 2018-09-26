@@ -41,23 +41,21 @@ def _(state, time, message):
 
     if not s['game'] and len(s['players']) > 1:
         id_ = max_id(s['players'])
-        return s, [
-            commands.broadcast(net.state(s)),
-            commands.delay(START_DELAY_S, messages.players_ready(id_))]
+        return broadcast(s, [
+            commands.delay(START_DELAY_S, messages.players_ready(id_))])
 
-    return s, [commands.broadcast(net.state(s))]
+    return broadcast(s)
 
 
 @update.register(messages.PLAYER_LEFT)  # NOQA: F811
 def _(state, time, message):
     players = [p for p in state['players'] if p['id'] != message['id']]
 
-    s = {
+    return broadcast({
         **state,
         'players': players,
         'game': state['game'] if players else None,
-    }
-    return s, [commands.broadcast(net.state(s))]
+    })
 
 
 @update.register(messages.PLAYERS_READY)  # NOQA: F811
@@ -70,17 +68,16 @@ def _(state, time, message):
 
 @update.register(messages.GAME_STARTED)  # NOQA: F811
 def _(state, time, message):
-    s = {
+    return broadcast({
         **state,
         'players': [{**p, 'points': 0} for p in state['players']],
         'game': make_game(message['seed'], time),
-    }
-    return s, [commands.broadcast(net.state(s))]
+    })
 
 
 @update.register(messages.CARD_DEALT)  # NOQA: F811
 def _(state, time, message):
-    s = {
+    return broadcast({
         **state,
         'game': {
             **state['game'],
@@ -91,8 +88,7 @@ def _(state, time, message):
                 state['game']['deck'][0]),
             'future_cards': state['game']['future_cards'] - 1,
         }
-    }
-    return s, [commands.broadcast(net.state(s))]
+    })
 
 
 @update.register(messages.CARDS_WANTED)  # NOQA: F811
@@ -106,16 +102,14 @@ def _(state, time, message):
         for p in state['players']]
 
     if not all(p['wants_cards'] for p in players):
-        s = {**state, 'players': players}
-        return s, [commands.broadcast(net.state(s))]
+        return broadcast({**state, 'players': players})
 
     players_reset = [{**p, 'wants_cards': False} for p in players]
 
     if find_set(state['game']['board']):
-        s = {**state, 'players': players_reset}
-        return s, [
-            commands.broadcast(net.cards_denied()),
-            commands.broadcast(net.state(s))]
+        return broadcast(
+            {**state, 'players': players_reset},
+            [commands.broadcast(net.cards_denied())])
 
     b = state['game']['board']
     new_board = board.expand(b) if board.is_full(b) else b
@@ -126,7 +120,7 @@ def _(state, time, message):
         for i, position in enumerate(free)
     ]
 
-    s = {
+    return broadcast({
         **state,
         'players': players_reset,
         'game': {
@@ -134,9 +128,7 @@ def _(state, time, message):
             'board': new_board,
             'future_cards': state['game']['future_cards'] + 3,
         },
-    }
-
-    return s, deals + [commands.broadcast(s)]
+    }, deals)
 
 
 @update.register(messages.SET_ANNOUNCED)  # NOQA: F811
@@ -170,20 +162,25 @@ def _(state, time, message):
         commands.delay(
             DEAL_DELAY_S + i * DEAL_DELTA_S, messages.card_dealt(position))
         for i, position in enumerate(positions)
-    ] if is_correct and num_cards <= 12 and s['game']['deck'] else []
-
-    c = [*deals, commands.broadcast(net.state(s))]
+    ] if is_correct and num_cards < 12 and s['game']['deck'] else []
 
     if not s['game']['deck'] and not find_set(s['game']['board']):
         id_ = max_id(s['players'])
-        return {
+        return broadcast({
             **s, 'game': {
                 **s['game'],
                 'game_over': True,
-            }}, [
-            *c, commands.delay(RESTART_DELAY_S, messages.players_ready(id_))]
+            }
+        }, [
+            *deals,
+            commands.delay(RESTART_DELAY_S, messages.players_ready(id_))
+        ])
 
-    return s, c
+    return broadcast(s, deals)
+
+
+def broadcast(state, cmds=[]):
+    return state, [*cmds, commands.broadcast(net.state(state))]
 
 
 def points(is_correct):
