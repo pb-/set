@@ -21,6 +21,7 @@ def state(state):
         'game': {
             'board': state['game']['board'],
             'game_over': state['game']['game_over'],
+            'deck_count': len(state['game']['deck']),
         } if state['game'] else None,
     }
 

@@ -51,6 +51,7 @@ type alias Player =
 type alias Game =
   { board : Board
   , gameOver: Bool
+  , deckCount: Int
   }
 
 type alias Card =
@@ -80,9 +81,10 @@ playerDecoder =
 
 gameDecoder : Decoder Game
 gameDecoder =
-  map2 Game
+  map3 Game
     (field "board" boardDecoder)
     (field "game_over" bool)
+    (field "deck_count" int)
 
 boardDecoder : Decoder Board
 boardDecoder =
@@ -194,11 +196,14 @@ viewGame model =
         True ->
           div [] [text "Game is over!"]
         False ->
-          div
-            [ style [("grid-template-columns", "repeat(" ++ (toString (List.length game.board)) ++ ", 1fr)")]
-            , class "board"
+          div []
+            [ div
+                [ style [("grid-template-columns", "repeat(" ++ (toString (List.length game.board)) ++ ", 1fr)")]
+                , class "board"
+                ]
+                (List.map (viewCard model) (List.concat game.board))
+            , div [] [text ((toString game.deckCount) ++ " cards left in deck")]
             ]
-            (List.map (viewCard model) (List.concat game.board))
 
 viewCard : Model -> Int -> Html Msg
 viewCard model card =
