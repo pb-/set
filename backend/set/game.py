@@ -107,7 +107,7 @@ def _(state, time, message):
 
     if not all(p['wants_cards'] for p in players):
         s = {**state, 'players': players}
-        return s, [commands.broadcast(s)]
+        return s, [commands.broadcast(net.state(s))]
 
     players_reset = [{**p, 'wants_cards': False} for p in players]
 
