@@ -138,7 +138,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Join ->
-            ( { model | joined = True }, send serverAddress ("{\"type\":\"player-joined\",\"name\":\"" ++ model.name ++ "\"}") )
+            ( { model | joined = True }, send serverAddress (JE.encode 0 (JE.object [ ( "type", JE.string "player-joined" ), ( "name", JE.string model.name ) ])) )
 
         UpdateName name ->
             ( { model | name = name }, Cmd.none )
