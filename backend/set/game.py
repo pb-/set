@@ -159,8 +159,6 @@ def _(state, time, message):
         'game': {
             **state['game'],
             'board': board.without(state['game']['board'], message['cards']),
-            'future_cards': state['game']['future_cards'] + (
-                3 if state['game']['deck'] else 0)
         } if is_correct else state['game']
     }
 
@@ -179,7 +177,13 @@ def _(state, time, message):
         for i, position in enumerate(positions)
     ] if is_correct and num_cards < 12 and s['game']['deck'] else []
 
-    return broadcast(s, deals)
+    return broadcast({
+        **s,
+        'game': {
+            **s['game'],
+            'future_cards': s['game']['future_cards'] + (3 if deals else 0),
+        },
+    }, deals)
 
 
 def broadcast(state, cmds=[]):
