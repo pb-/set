@@ -162,13 +162,18 @@ def _(state, time, message):
         } if is_correct else state['game']
     }
 
+    conf = [commands.broadcast(net.set_confirmed(
+        message['cards'], next((
+            p['name'] for p in s['players'] if p['id'] == message['id']), '?')
+    ))] if is_correct else []
+
     if not s['game']['deck'] and not find_set(s['game']['board']):
         return broadcast({
             **s, 'game': {
                 **s['game'],
                 'game_over': True,
             }
-        }, [commands.delay(RESTART_DELAY_S, messages.game_ended())])
+        }, [commands.delay(RESTART_DELAY_S, messages.game_ended()), *conf])
 
     num_cards = len(list(board.cards(s['game']['board'])))
     deals = [
@@ -183,7 +188,7 @@ def _(state, time, message):
             **s['game'],
             'future_cards': s['game']['future_cards'] + (3 if deals else 0),
         },
-    }, deals)
+    }, deals + conf)
 
 
 def broadcast(state, cmds=[]):

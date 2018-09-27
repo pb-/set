@@ -4,6 +4,7 @@ Pure functions to create Server -> client messages.
 
 STATE = 'state'
 CARDS_DENIED = 'cards-denied'
+SET_CONFIRMED = 'set-confirmed'
 
 
 def state(state):
@@ -29,4 +30,12 @@ def state(state):
 def cards_denied():
     return {
         'type': CARDS_DENIED,
+    }
+
+
+def set_confirmed(cards, player):
+    return {
+        'type': SET_CONFIRMED,
+        'cards': cards,
+        'player': player,
     }
