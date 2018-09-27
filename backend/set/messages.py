@@ -12,6 +12,7 @@ CARDS_WANTED = 'cards-wanted'
 PLAYERS_READY = 'players-ready'
 SET_ANNOUNCED = 'set-announced'
 CARD_DEALT = 'card-dealt'
+GAME_ENDED = 'game-ended'
 
 CLIENT_MESSAGES = [PLAYER_JOINED, SET_ANNOUNCED, CARDS_WANTED]
 
@@ -103,6 +104,12 @@ def card_dealt(position):
     return {
         'type': CARD_DEALT,
         'position': position,
+    }
+
+
+def game_ended():
+    return {
+        'type': GAME_ENDED,
     }
 
 

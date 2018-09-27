@@ -33,18 +33,20 @@ def _(state, time, message):
             None):
         return state, []
 
-    s = {
+    return schedule_ready({
         **state,
         'players': [*state['players'], make_player(
             message['id'], message['name'], time)]
-    }
+    })
 
-    if not s['game'] and len(s['players']) > 1:
-        id_ = max_id(s['players'])
-        return broadcast(s, [
+
+def schedule_ready(state):
+    if not state['game'] and len(state['players']) > 1:
+        id_ = max_id(state['players'])
+        return broadcast(state, [
             commands.delay(START_DELAY_S, messages.players_ready(id_))])
 
-    return broadcast(s)
+    return broadcast(state)
 
 
 @update.register(messages.PLAYER_LEFT)  # NOQA: F811
@@ -73,6 +75,11 @@ def _(state, time, message):
         'players': [{**p, 'points': 0} for p in state['players']],
         'game': make_game(message['seed'], time),
     })
+
+
+@update.register(messages.GAME_ENDED)  # NOQA: F811
+def _(state, time, message):
+    return schedule_ready({**state, 'game': None})
 
 
 @update.register(messages.CARD_DEALT)  # NOQA: F811
@@ -157,24 +164,20 @@ def _(state, time, message):
         } if is_correct else state['game']
     }
 
+    if not s['game']['deck'] and not find_set(s['game']['board']):
+        return broadcast({
+            **s, 'game': {
+                **s['game'],
+                'game_over': True,
+            }
+        }, [commands.delay(RESTART_DELAY_S, messages.game_ended())])
+
     num_cards = len(list(board.cards(s['game']['board'])))
     deals = [
         commands.delay(
             DEAL_DELAY_S + i * DEAL_DELTA_S, messages.card_dealt(position))
         for i, position in enumerate(positions)
     ] if is_correct and num_cards < 12 and s['game']['deck'] else []
-
-    if not s['game']['deck'] and not find_set(s['game']['board']):
-        id_ = max_id(s['players'])
-        return broadcast({
-            **s, 'game': {
-                **s['game'],
-                'game_over': True,
-            }
-        }, [
-            *deals,
-            commands.delay(RESTART_DELAY_S, messages.players_ready(id_))
-        ])
 
     return broadcast(s, deals)
 

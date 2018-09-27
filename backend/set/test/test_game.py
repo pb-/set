@@ -102,9 +102,12 @@ def _finish_game(s):
             s, c = update(s, 0, messages.cards_wanted(1))
             s, c = update(s, 0, messages.cards_wanted(2))
 
-        s = _apply_delayed(s, c)
+        if s['game']['game_over']:
+            s = _apply_delayed(s, c)
+            assert not s['game']
+            return
 
-    assert s['game']['game_over']
+        s = _apply_delayed(s, c)
 
 
 def _apply_delayed(s, cmds):
