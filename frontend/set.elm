@@ -35,6 +35,7 @@ type alias Model =
   , name : String
   , joined : Bool
   , selected : Set.Set Int
+  , message : String
   }
 
 type alias ServerState =
@@ -66,6 +67,10 @@ type alias Board = List (List Int)
 
 
 
+messageTypeDecoder : Decoder String
+messageTypeDecoder =
+  (field "type" string)
+
 serverStateDecoder : Decoder ServerState
 serverStateDecoder =
   map2 ServerState
@@ -91,10 +96,9 @@ boardDecoder =
   (list (list int))
 
 
-
 init : (Model, Cmd Msg)
 init =
-  (Model (ServerState [] Nothing) "" False Set.empty, Cmd.none)
+  (Model (ServerState [] Nothing) "" False Set.empty "", Cmd.none)
 
 
 
@@ -119,22 +123,31 @@ update msg model =
       ({model | name = name}, Cmd.none)
 
     ServerMessage encoded ->
-      case decodeString serverStateDecoder encoded of
+      case decodeString messageTypeDecoder encoded of
         Err _ ->
           (model, Cmd.none)
-        Ok server ->
-          let
-            boardCards =
-              case server.game of
-                Just game ->
-                  Set.fromList (List.concat game.board)
-                Nothing ->
-                  Set.empty
+        Ok msgType ->
+          case msgType of
+            "cards-denied" ->
+              ({model | message = "There is still a set!"}, Cmd.none)
+            "state" ->
+              case decodeString serverStateDecoder encoded of
+                Err _ ->
+                  (model, Cmd.none)
+                Ok server ->
+                  let
+                    boardCards =
+                      case server.game of
+                        Just game ->
+                          Set.fromList (List.concat game.board)
+                        Nothing ->
+                          Set.empty
 
-          in
-          ({ model
-           | server = server
-           , selected = Set.intersect model.selected boardCards}, Cmd.none)
+                  in
+                  ({ model
+                   | server = server
+                   , selected = Set.intersect model.selected boardCards}, Cmd.none)
+            _ -> (model, Cmd.none)
 
     ToggleCard num ->
       let
@@ -203,6 +216,7 @@ viewGame model =
                 ]
                 (List.map (viewCard model) (List.concat game.board))
             , div [] [text ((toString game.deckCount) ++ " cards left in deck")]
+            , div [] [text model.message]
             ]
 
 viewCard : Model -> Int -> Html Msg
