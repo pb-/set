@@ -72,7 +72,10 @@ def _(state, time, message):
 def _(state, time, message):
     return broadcast({
         **state,
-        'players': [{**p, 'points': 0} for p in state['players']],
+        'players': [{
+            **p,
+            'points': 0,
+            'wants_cards': False} for p in state['players']],
         'game': make_game(message['seed'], time),
     })
 
