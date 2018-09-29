@@ -48,7 +48,7 @@ type alias Model =
     , name : String
     , joined : Bool
     , selected : Set.Set Int
-    , message : String
+    , lastMsg : ServerMsg
     }
 
 
@@ -84,6 +84,12 @@ type alias Board =
     List (List Int)
 
 
+type alias SetConfirmed =
+    { cards : List Int
+    , player : String
+    }
+
+
 messageTypeDecoder : Decoder String
 messageTypeDecoder =
     field "type" string
@@ -117,9 +123,16 @@ boardDecoder =
     list (list int)
 
 
+setConfirmedDecoder : Decoder SetConfirmed
+setConfirmedDecoder =
+    map2 SetConfirmed
+        (field "cards" (list int))
+        (field "player" string)
+
+
 init : ( Model, Cmd Msg )
 init =
-    ( Model (ServerState [] Nothing) "" False Set.empty "", Cmd.none )
+    ( Model (ServerState [] Nothing) "" False Set.empty NoMsg, Cmd.none )
 
 
 
@@ -132,6 +145,12 @@ type Msg
     | ServerMessage String
     | ToggleCard Int
     | RequestCards
+
+
+type ServerMsg
+    = NoMsg
+    | CardsDenied
+    | SetConf SetConfirmed
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -151,7 +170,15 @@ update msg model =
                 Ok msgType ->
                     case msgType of
                         "cards-denied" ->
-                            ( { model | message = "There is still a set!" }, Cmd.none )
+                            ( { model | lastMsg = CardsDenied }, Cmd.none )
+
+                        "set-confirmed" ->
+                            case decodeString setConfirmedDecoder encoded of
+                                Err _ ->
+                                    ( model, Cmd.none )
+
+                                Ok setConfirmed ->
+                                    ( { model | lastMsg = SetConf setConfirmed }, Cmd.none )
 
                         "state" ->
                             case decodeString serverStateDecoder encoded of
@@ -275,7 +302,17 @@ viewGame model =
                             ]
                             (List.map (viewCard model) (List.concat game.board))
                         , div [] [ text (toString game.deckCount ++ " cards left in deck") ]
-                        , div [] [ text model.message ]
+                        , div [ class "message" ]
+                            [ case model.lastMsg of
+                                NoMsg ->
+                                    text ""
+
+                                CardsDenied ->
+                                    text "There is still a set!"
+
+                                SetConf setConf ->
+                                    div [] (text (setConf.player ++ " found a set: ") :: List.map (viewCard model) setConf.cards)
+                            ]
                         ]
 
 
