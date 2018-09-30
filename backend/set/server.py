@@ -6,6 +6,7 @@ import time
 import random
 from json import loads, dumps, JSONDecodeError
 from functools import wraps
+from argparse import ArgumentParser
 
 from tornado.ioloop import IOLoop
 from tornado.web import Application, StaticFileHandler
@@ -87,11 +88,16 @@ def run():
         'clients': {},
     }
 
+    parser = ArgumentParser()
+    parser.add_argument('--port', '-p', type=int, default=8000)
+    parser.add_argument('--root', '-r', default='../frontend/public')
+    args = parser.parse_args()
+
     Application([
         (r'/socket', Handler, dict(context=context)),
         (r'/(.*)', StaticFileHandler, {
-            'path': '../frontend/public',
+            'path': args.root,
             'default_filename': 'index.html'}),
-    ], compress_response=True).listen(8000)
+    ], compress_response=True).listen(args.port)
 
     IOLoop.current().start()
