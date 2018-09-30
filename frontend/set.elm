@@ -1,4 +1,4 @@
-module Main exposing (Board, Card, Game, Model, Msg(..), Player, ServerState, boardDecoder, decodeCard, gameDecoder, init, main, messageTypeDecoder, playerDecoder, serverAddress, serverStateDecoder, shapes, subscriptions, update, view, viewCard, viewControls, viewGame, viewLogin, viewPlayers, viewState)
+module Main exposing (Board, Card, Game, Model, Msg(..), Player, ServerState, boardDecoder, decodeCard, gameDecoder, init, main, messageTypeDecoder, playerDecoder, serverStateDecoder, shapes, subscriptions, update, view, viewCard, viewControls, viewGame, viewLogin, viewPlayers, viewState)
 
 import Html exposing (Html, button, div, input, table, td, text, tr)
 import Html.Attributes exposing (class, placeholder, style)
@@ -9,10 +9,6 @@ import Set
 import Svg exposing (path, svg)
 import Svg.Attributes exposing (d, viewBox)
 import WebSocket exposing (listen, send)
-
-
-serverAddress =
-    "ws://10.0.0.8:8001"
 
 
 shapes i =
@@ -31,7 +27,7 @@ shapes i =
 
 
 main =
-    Html.program
+    Html.programWithFlags
         { init = init
         , view = view
         , update = update
@@ -44,7 +40,8 @@ main =
 
 
 type alias Model =
-    { server : ServerState
+    { serverAddress : String
+    , server : ServerState
     , name : String
     , joined : Bool
     , selected : Set.Set Int
@@ -130,9 +127,9 @@ setConfirmedDecoder =
         (field "player" string)
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( Model (ServerState [] Nothing) "" False Set.empty NoMsg, Cmd.none )
+init : String -> ( Model, Cmd Msg )
+init serverAddress =
+    ( Model serverAddress (ServerState [] Nothing) "" False Set.empty NoMsg, Cmd.none )
 
 
 
@@ -157,7 +154,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Join ->
-            ( { model | joined = True }, send serverAddress (JE.encode 0 (JE.object [ ( "type", JE.string "player-joined" ), ( "name", JE.string model.name ) ])) )
+            ( { model | joined = True }, send model.serverAddress (JE.encode 0 (JE.object [ ( "type", JE.string "player-joined" ), ( "name", JE.string model.name ) ])) )
 
         UpdateName name ->
             ( { model | name = name }, Cmd.none )
@@ -219,7 +216,7 @@ update msg model =
 
                 cmd =
                     if Set.size selected == 3 then
-                        send serverAddress (JE.encode 0 (JE.object [ ( "type", JE.string "set-announced" ), ( "cards", JE.list (List.map JE.int (Set.toList selected)) ) ]))
+                        send model.serverAddress (JE.encode 0 (JE.object [ ( "type", JE.string "set-announced" ), ( "cards", JE.list (List.map JE.int (Set.toList selected)) ) ]))
 
                     else
                         Cmd.none
@@ -236,11 +233,11 @@ update msg model =
             )
 
         RequestCards ->
-            ( model, send serverAddress (JE.encode 0 (JE.object [ ( "type", JE.string "cards-wanted" ) ])) )
+            ( model, send model.serverAddress (JE.encode 0 (JE.object [ ( "type", JE.string "cards-wanted" ) ])) )
 
 
 subscriptions model =
-    listen serverAddress ServerMessage
+    listen model.serverAddress ServerMessage
 
 
 

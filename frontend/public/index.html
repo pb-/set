@@ -77,7 +77,8 @@
     <script src="app.js"></script>
     <script src="NoSleep.min.js"></script>
     <script>
-      Elm.Main.fullscreen();
+      Elm.Main.fullscreen(
+        document.location.href.replace(/^http/, 'ws') + 'socket');
       var noSleep = new NoSleep();
 
       function enableNoSleep() {

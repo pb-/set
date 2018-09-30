@@ -8,7 +8,7 @@ from json import loads, dumps, JSONDecodeError
 from functools import wraps
 
 from tornado.ioloop import IOLoop
-from tornado.web import Application
+from tornado.web import Application, StaticFileHandler
 from tornado.websocket import WebSocketHandler
 
 from . import game, messages, commands
@@ -88,7 +88,10 @@ def run():
     }
 
     Application([
-        (r'/', Handler, dict(context=context)),
-    ]).listen(8001)
+        (r'/socket', Handler, dict(context=context)),
+        (r'/(.*)', StaticFileHandler, {
+            'path': '../frontend/public',
+            'default_filename': 'index.html'}),
+    ]).listen(8000)
 
     IOLoop.current().start()
