@@ -92,6 +92,6 @@ def run():
         (r'/(.*)', StaticFileHandler, {
             'path': '../frontend/public',
             'default_filename': 'index.html'}),
-    ]).listen(8000)
+    ], compress_response=True).listen(8000)
 
     IOLoop.current().start()
