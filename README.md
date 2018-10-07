@@ -2,6 +2,17 @@
 
 Implements a fun game.
 
+## Deployment
+
+### Build and run a Docker image
+
+Elm 0.18 is required on the build system.
+
+```
+make
+docker run -p 8000:8000 set
+```
+
 ## Development
 
 ### Backend
