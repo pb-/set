@@ -2,6 +2,7 @@
 Entry point of the app. Contains impure functions and lots of side effects.
 """
 import logging
+import os
 import time
 import random
 from json import loads, dumps, JSONDecodeError
@@ -89,8 +90,10 @@ def run():
     }
 
     parser = ArgumentParser()
-    parser.add_argument('--port', '-p', type=int, default=8000)
-    parser.add_argument('--root', '-r', default='../frontend/public')
+    parser.add_argument(
+        '--port', '-p', type=int, default=int(os.getenv('SETD_PORT', '8000')))
+    parser.add_argument(
+        '--root', '-r', default=os.getenv('SETD_ROOT', '../frontend/public'))
     args = parser.parse_args()
 
     Application([
