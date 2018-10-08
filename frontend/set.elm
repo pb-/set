@@ -58,7 +58,7 @@ type alias ServerState =
 type alias Player =
     { name : String
     , points : Int
-    , wants_cards : Bool
+    , wantsCards : Bool
     }
 
 
@@ -351,7 +351,7 @@ viewPlayers model =
                 [ td [] [ text player.name ]
                 , td []
                     [ text
-                        (if player.wants_cards then
+                        (if player.wantsCards then
                             "wants cards"
 
                          else
