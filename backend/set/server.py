@@ -61,6 +61,7 @@ class Handler(WebSocketHandler):
 
         self.context['last_id'] = self.player_id
         self.context['clients'][self.player_id] = self
+        logging.debug('client %d connected', self.player_id)
 
     def on_message(self, message):
         try:
@@ -76,6 +77,7 @@ class Handler(WebSocketHandler):
         self.handle_player_message(decoded)
 
     def on_close(self):
+        logging.debug('client %d disconnected', self.player_id)
         del self.context['clients'][self.player_id]
         self.handle_player_message(messages.player_left(self.player_id))
 
@@ -103,6 +105,7 @@ def run():
         (r'/(.*)', StaticFileHandler, {
             'path': args.root,
             'default_filename': 'index.html'}),
-    ], compress_response=True).listen(args.port)
+    ], compress_response=True, websocket_ping_interval=10,
+       websocket_ping_timeout=20).listen(args.port)
 
     IOLoop.current().start()
