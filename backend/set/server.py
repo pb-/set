@@ -55,6 +55,8 @@ class Handler(WebSocketHandler):
 
     def initialize(self, context):
         self.context = context
+
+    def open(self):
         self.player_id = 1 + self.context['last_id']
 
         self.context['last_id'] = self.player_id
