@@ -15,3 +15,8 @@ frontend:
 backend:
 	git archive --format=tar.gz --prefix=set/ -o backend.tar.gz HEAD backend
 .PHONY: backend
+
+publish:
+	docker tag set pbgh/set
+	docker push pbgh/set
+.PHONY: publish
