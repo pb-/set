@@ -5,11 +5,15 @@
     <title>set</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
+      body {
+        max-width: 400px;
+        margin: auto;
+      }
+
       .board {
         display: grid;
         grid-template-rows: repeat(3, 1fr);
         grid-template-columns: repeat(4, 1fr);
-        grid-gap: 3vw 3vw;
         grid-auto-flow: column;
       }
 
@@ -18,11 +22,11 @@
         flex-direction: column;
         justify-content: center;
         border: 1px solid black;
-        border-radius: 2vw;
+        border-radius: 10%;
         box-shadow: 3px 3px 3px lightgray;
         transition: box-shadow 0.1s;
-        padding: 2vw;
-        height: 27vw;
+        padding: 10%;
+        margin: 5%;
       }
 
       .message .card {

@@ -6,8 +6,8 @@ import Html.Events exposing (onClick, onInput)
 import Json.Decode exposing (Decoder, bool, decodeString, field, int, list, map2, map3, maybe, string)
 import Json.Encode as JE
 import Set
-import Svg exposing (path, svg)
-import Svg.Attributes exposing (d, viewBox)
+import Svg exposing (g, path, svg)
+import Svg.Attributes exposing (d, transform, viewBox)
 import WebSocket exposing (listen, send)
 
 
@@ -330,12 +330,25 @@ viewCard model card =
 
                     else
                         ""
+
+                offsetY =
+                    (200 - 50 * (1 + c.count)) // 2
             in
             div
                 [ class ("card col" ++ toString c.color ++ " sh" ++ toString c.shading ++ selected)
                 , onClick (ToggleCard card)
                 ]
-                (List.repeat (c.count + 1) (svg [ viewBox "-10 5 120 50" ] [ path [ d (shapes c.shape) ] [] ]))
+                [ svg
+                    [ viewBox "-10 5 120 205" ]
+                    (List.map
+                        (\i ->
+                            g
+                                [ transform ("translate(0 " ++ toString (offsetY + i * 50) ++ ")") ]
+                                [ path [ d (shapes c.shape) ] [] ]
+                        )
+                        (List.range 0 c.count)
+                    )
+                ]
 
 
 viewControls : Model -> Html Msg
