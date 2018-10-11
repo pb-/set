@@ -87,7 +87,7 @@ def _(state, time, message):
 
 @update.register(messages.CARD_DEALT)  # NOQA: F811
 def _(state, time, message):
-    return broadcast({
+    s = {
         **state,
         'game': {
             **state['game'],
@@ -98,7 +98,12 @@ def _(state, time, message):
                 state['game']['deck'][0]),
             'future_cards': state['game']['future_cards'] - 1,
         }
-    })
+    }
+
+    if game_is_over(s):
+        return end_game(s)
+
+    return broadcast(s)
 
 
 @update.register(messages.CARDS_WANTED)  # NOQA: F811
@@ -170,13 +175,8 @@ def _(state, time, message):
             p['name'] for p in s['players'] if p['id'] == message['id']), '?')
     ))] if is_correct else []
 
-    if not s['game']['deck'] and not find_set(s['game']['board']):
-        return broadcast({
-            **s, 'game': {
-                **s['game'],
-                'game_over': True,
-            }
-        }, [commands.delay(RESTART_DELAY_S, messages.game_ended()), *conf])
+    if game_is_over(s):
+        return end_game(s, conf)
 
     num_cards = len(list(board.cards(s['game']['board'])))
     deals = [
@@ -196,6 +196,19 @@ def _(state, time, message):
 
 def broadcast(state, cmds=[]):
     return state, [*cmds, commands.broadcast(net.state(state))]
+
+
+def game_is_over(state):
+    return not state['game']['deck'] and not find_set(state['game']['board'])
+
+
+def end_game(state, cmds=[]):
+    return broadcast({
+        **state, 'game': {
+            **state['game'],
+            'game_over': True,
+        }
+    }, [commands.delay(RESTART_DELAY_S, messages.game_ended()), *cmds])
 
 
 def points(is_correct):

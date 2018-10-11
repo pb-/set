@@ -129,3 +129,20 @@ def _all_leaving(s, c):
     s, _ = update(s, 0, messages.player_left(1))
     s, _ = update(s, 0, messages.player_left(2))
     assert not s['game']
+
+
+def test_no_final_set():
+    # no set after final deal of cards
+    before = {
+        'players': [],
+        'game': {
+            'deck': [9],
+            'board': ((30, 75, -1), (5, 72, 2), (6, 42, 7), (48, 46, 51)),
+            'future_cards': 1,
+            'game_over': False,
+            'started_at': 1539184988.226014,
+        },
+    }
+    message = messages.card_dealt((0, 2))
+    after, _ = update(before, 0, message)
+    assert after['game']['game_over'], "game should end immediately"
