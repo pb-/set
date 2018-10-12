@@ -267,7 +267,7 @@ viewLogin : Model -> Html Msg
 viewLogin model =
     div []
         [ input [ placeholder "Your name", onInput UpdateName ] []
-        , button [ onClick Join ] [ text "join" ]
+        , button [ onClick Join, disabled (model.name == "") ] [ text "join" ]
         ]
 
 
