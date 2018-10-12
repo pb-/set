@@ -155,29 +155,28 @@ def _(state, time, message):
     if not state['game'] or state['game']['game_over']:
         return state, []
 
-    is_correct = is_board_set(state['game']['board'], message['cards'])
+    if not is_board_set(state['game']['board'], message['cards']):
+        return broadcast({
+            **state,
+            'players': add_player_points(state['players'], message['id'], -1),
+        })
+
     positions = tuple(
         board.position(state['game']['board'], c) for c in message['cards'])
 
     s = {
         **state,
-        'players': [
-            {
-                **p,
-                'points': max(0, p['points'] + points(is_correct))
-            } if p['id'] == message['id'] else p
-            for p in state['players']
-        ],
+        'players': add_player_points(state['players'], message['id'], 1),
         'game': {
             **state['game'],
             'board': board.without(state['game']['board'], message['cards']),
-        } if is_correct else state['game']
+        }
     }
 
     conf = [commands.broadcast(net.set_confirmed(
         message['cards'], next((
             p['name'] for p in s['players'] if p['id'] == message['id']), '?')
-    ))] if is_correct else []
+    ))]
 
     if game_is_over(s):
         return end_game(s, conf)
@@ -187,7 +186,7 @@ def _(state, time, message):
         commands.delay(
             DEAL_DELAY_S + i * DEAL_DELTA_S, messages.card_dealt(position))
         for i, position in enumerate(positions)
-    ] if is_correct and num_cards < 12 and s['game']['deck'] else []
+    ] if num_cards < 12 and s['game']['deck'] else []
 
     return broadcast({
         **s,
@@ -196,6 +195,13 @@ def _(state, time, message):
             'future_cards': s['game']['future_cards'] + (3 if deals else 0),
         },
     }, deals + conf)
+
+
+def add_player_points(players, id_, change):
+    return [
+        {**p, 'points': max(0, p['points'] + change)} if p['id'] == id_ else p
+        for p in players
+    ]
 
 
 def broadcast(state, cmds=[]):
@@ -213,10 +219,6 @@ def end_game(state, cmds=[]):
             'game_over': True,
         }
     }, [commands.delay(RESTART_DELAY_S, messages.game_ended()), *cmds])
-
-
-def points(is_correct):
-    return 1 if is_correct else -1
 
 
 def max_id(players):
