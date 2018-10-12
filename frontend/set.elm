@@ -353,7 +353,22 @@ viewCard model card =
 
 viewControls : Model -> Html Msg
 viewControls model =
-    button [ onClick RequestCards ] [ text "No set" ]
+    let
+        canRequest model game =
+            game.deckCount
+                > 0
+                && (model.server.players
+                        |> List.filter (\p -> p.name == model.name && p.wantsCards)
+                        |> List.length
+                        |> (==) 0
+                   )
+    in
+    case model.server.game of
+        Nothing ->
+            text ""
+
+        Just game ->
+            button [ onClick RequestCards, canRequest model game |> not |> disabled ] [ text "Request more cards" ]
 
 
 viewPlayers : Model -> Html Msg
