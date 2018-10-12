@@ -1,7 +1,7 @@
 module Main exposing (Board, Card, Game, Model, Msg(..), Player, ServerState, boardDecoder, decodeCard, gameDecoder, init, main, messageTypeDecoder, playerDecoder, serverStateDecoder, shapes, subscriptions, update, view, viewCard, viewControls, viewGame, viewLogin, viewPlayers, viewState)
 
 import Html exposing (Html, button, div, input, table, td, text, tr)
-import Html.Attributes exposing (class, placeholder, style)
+import Html.Attributes exposing (class, disabled, placeholder, style)
 import Html.Events exposing (onClick, onInput)
 import Json.Decode exposing (Decoder, bool, decodeString, field, int, list, map2, map3, maybe, string)
 import Json.Encode as JE
@@ -374,4 +374,4 @@ viewPlayers model =
                 , td [] [ text (toString player.points) ]
                 ]
     in
-    table [] (List.map viewPlayer model.server.players)
+    table [] (List.map viewPlayer (List.sortBy (\p -> -p.points) model.server.players))
