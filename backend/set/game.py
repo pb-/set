@@ -166,7 +166,8 @@ def _(state, time, message):
 
     s = {
         **state,
-        'players': add_player_points(state['players'], message['id'], 1),
+        'players': reset_card_requests(
+            add_player_points(state['players'], message['id'], 1)),
         'game': {
             **state['game'],
             'board': board.without(state['game']['board'], message['cards']),
