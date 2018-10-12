@@ -119,7 +119,7 @@ def _(state, time, message):
     if not all(p['wants_cards'] for p in players):
         return broadcast({**state, 'players': players})
 
-    players_reset = [{**p, 'wants_cards': False} for p in players]
+    players_reset = reset_card_requests(players)
 
     if find_set(state['game']['board']):
         return broadcast(
@@ -144,6 +144,10 @@ def _(state, time, message):
             'future_cards': state['game']['future_cards'] + 3,
         },
     }, deals)
+
+
+def reset_card_requests(players):
+    return [{**p, 'wants_cards': False} for p in players]
 
 
 @update.register(messages.SET_ANNOUNCED)  # NOQA: F811
