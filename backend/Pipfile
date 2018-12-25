@@ -14,6 +14,7 @@ set = {path = ".", editable = true}
 set = {path = ".", editable = true}
 tornado = "*"
 jsonschema = "*"
+datadispatch = "*"
 
 [requires]
 python_version = "3.6"

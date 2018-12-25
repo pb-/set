@@ -5,9 +5,10 @@ all game logic is contained in update().
 from random import Random
 from itertools import combinations
 
+from datadispatch import datadispatch
+
 from . import messages, commands, board, net
 from .card import is_set
-from .func import valuedispatch
 
 START_DELAY_S = 3
 RESTART_DELAY_S = 5
@@ -22,7 +23,7 @@ def initial_state():
     }
 
 
-@valuedispatch(lambda args, _: args[2].get('type'))
+@datadispatch(lambda args, _: args[2].get('type'))
 def update(state, time, message):
     return state, []
 
